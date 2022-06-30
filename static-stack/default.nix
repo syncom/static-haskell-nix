@@ -2,27 +2,32 @@
 #
 # Usage:
 #
-#     $(nix-build --no-link -A fullBuildScript --argstr stackDir /absolute/path/to/stack/source)
+#     $(nix-build --no-link -A fullBuildScript --argstr src-dir /absolute/path/to/package/source)
 {
-  stackDir ? "/absolute/path/to/stack/source",
+  src-dir ? "/absolute/path/to/package/source",
   stack2nix-output-path ? "custom-stack2nix-output.nix",
+  hackage-version ? "2021-07-12T00:00:00Z",
+  package-name ? "name of the stack package",
+  ghc-version ? "ghc8104", # Must be in nixpkgs and must match that determined by stack.yaml
+  nixpkgs-revision ? "d00b5a5fa6fe8bdf7005abb06c46ae0245aec8b5",
 }:
 let
-  cabalPackageName = "stack";
-  compiler = "ghc8104"; # matching stack-lts-12.yaml
+  cabalPackageName = package-name;
+  compiler = ghc-version;
 
-  pkgs = import ../nixpkgs {};
+  pkgs = import (fetchTarball ("https://github.com/NixOS/nixpkgs/archive/" + nixpkgs-revision + ".tar.gz")) {};
 
   stack2nix-script = import ../static-stack2nix-builder/stack2nix-script.nix {
     inherit pkgs;
     inherit compiler;
-    stack-project-dir = stackDir; # where stack.yaml is
-    hackageSnapshot = "2021-07-12T00:00:00Z"; # pins e.g. extra-deps without hashes or revisions
+    stack-project-dir = src-dir; # where stack.yaml is
+    hackageSnapshot = hackage-version; # pins e.g. extra-deps without hashes or revisions
   };
 
   static-stack2nix-builder = import ../static-stack2nix-builder/default.nix {
     normalPkgs = pkgs;
-    inherit cabalPackageName compiler stack2nix-output-path;
+    cabalPackageName = package-name;
+    inherit compiler stack2nix-output-path;
     # disableOptimization = true; # for compile speed
   };
 
@@ -58,7 +63,10 @@ let
   fullBuildScript = pkgs.writeShellScript "stack2nix-and-build-script.sh" ''
     set -eu -o pipefail
     STACK2NIX_OUTPUT_PATH=$(${stack2nix-script})
-    ${pkgs.nix}/bin/nix-build --no-link -A static_package --argstr stack2nix-output-path "$STACK2NIX_OUTPUT_PATH" "$@"
+    ${pkgs.nix}/bin/nix-build --no-link -A static_package \
+      --argstr stack2nix-output-path "$STACK2NIX_OUTPUT_PATH" \
+      --argstr package-name "${package-name}" \
+      "$@"
   '';
 
 in
