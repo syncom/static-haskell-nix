@@ -17,7 +17,7 @@
   stack2nix-output-path,
 
   # Pin nixpkgs version.
-  normalPkgs ? <nixpkgs>,
+  normalPkgs ? import (fetchTarball https://github.com/nh2/nixpkgs/archive/8d536f36256d30d8fa47b24caafb1af6405889f3.tar.gz) {},
 
   # Use `integer-simple` instead of `integer-gmp` to avoid linking in
   # this LGPL dependency statically.
