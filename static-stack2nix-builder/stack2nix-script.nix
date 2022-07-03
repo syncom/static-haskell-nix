@@ -5,7 +5,7 @@
 #
 {
   # nixpkgs to use.
-  pkgs,
+  pkgs ? <nixpkgs>
 
   # ghc to use; only because without a GHC on path, stack complains:
   #     stack2nix: No compiler found, expected minor version match with ghc-8.10.4 (x86_64) (based on resolver setting ...

@@ -4,7 +4,7 @@ in
 {
   tracing ? false, # Enable this to see debug traces
 
-  normalPkgs ? import ../nixpkgs.nix,
+  normalPkgs ? <nixpkgs>,
 
   overlays ? [],
 
